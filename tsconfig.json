@@ -1,0 +1,23 @@
+{
+    "compilerOptions": {
+        "module": "NodeNext",
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
+        "allowSyntheticDefaultImports": true,
+        "target": "esnext",
+        "moduleResolution": "nodenext",
+        "sourceMap": true,
+        "outDir": "dist",
+        "declaration": true,
+        "alwaysStrict": true,
+        "strict": true,
+        "experimentalDecorators": true,
+        "strictPropertyInitialization": false,
+        "emitDecoratorMetadata": true,
+        "types": ["jest"],
+        "baseUrl": "./"
+    },
+    "files": ["src/index.ts", "src/start.ts"],
+    "include": ["./src/**/*"],
+    "exclude": ["node_modules", "./*.ts", "tests"]
+}
