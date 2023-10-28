@@ -1,14 +1,16 @@
 import { Queue } from "bullmq";
+import { Service } from "typedi";
+
 import { ENV } from "../config/env.js";
 import logger from "../utils/logger.js";
-import { Service } from "typedi";
+import { JobKey } from "./JobWorkerService.js";
 
 @Service()
 export class JobQueueService {
     private jobQueue: Queue;
 
     public async createQueue(): Promise<void> {
-        this.jobQueue = new Queue("retry-queue", {
+        this.jobQueue = new Queue(JobKey.TRIP_PROPOSAL, {
             connection: {
                 host: ENV.redisHost,
                 port: +ENV.redisPort,

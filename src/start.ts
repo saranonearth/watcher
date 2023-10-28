@@ -6,6 +6,8 @@ import logger from "./utils/logger.js";
 import { DBLoader } from "./db/DBLoader.js";
 import { JobLoader } from "./job/JobLoader.js";
 import { LogListenerLoader } from "./listeners/LogListenerLoader.js";
+import { JobQueueService } from "./job/JobQueueService.js";
+import { JobKey } from "./job/JobWorkerService.js";
 
 type LoaderType = LogListenerLoader | DBLoader | JobLoader;
 

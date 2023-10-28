@@ -15,7 +15,7 @@ export class JobWorkerService {
 
     public async createWorker(): Promise<void> {
         this.jobWorker = new Worker(
-            "job-queue",
+            JobKey.TRIP_PROPOSAL,
             async (job: Job) => {
                 await this.processJob(job.id as string, job.name, job.data, job);
             },
@@ -35,7 +35,7 @@ export class JobWorkerService {
     }
 
     private async processJob(jobId: string, key: string, msg: any, job: Job): Promise<void> {
-        logger.info("In JobWorker - processJob", { jobId });
+        logger.info("In JobWorker - processJob", { jobId, msg });
         switch (key) {
             case JobKey.TRIP_PROPOSAL:
                 await Container.get(SwitchboardTask).tripProposal(msg);
