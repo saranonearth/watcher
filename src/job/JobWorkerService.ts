@@ -24,14 +24,14 @@ export class JobWorkerService {
                     host: ENV.redisHost,
                     port: +ENV.redisPort,
                 },
-                concurrency: 5, // magic✨
+                concurrency: 5,
             }
         );
         logger.info("Job Worker Created!");
     }
 
     public async close(): Promise<void> {
-        await this.jobWorker;
+        await this.jobWorker.close();
     }
 
     private async processJob(jobId: string, key: string, msg: any, job: Job): Promise<void> {

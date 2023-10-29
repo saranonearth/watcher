@@ -1,7 +1,8 @@
 import { Service } from "typedi";
+import mongoose, { Mongoose } from "mongoose";
+
 import { ENV } from "../config/env.js";
 import logger from "../utils/logger.js";
-import mongoose, { Mongoose } from "mongoose";
 
 @Service()
 export class DBLoader {

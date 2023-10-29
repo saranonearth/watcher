@@ -16,7 +16,7 @@ export const ENV = {
         OptimismWssRPC: process.env.OPTIMISM_WSS_RPC || "",
     },
     PRIVATE_KEY: {
-        arbitrum: process.env.ARBITRUM_WALLET || "",
-        optimism: process.env.OPTIMISM_WALLET || "",
+        42161: process.env.ARBITRUM_WALLET || "",
+        10: process.env.OPTIMISM_WALLET || "",
     },
 };

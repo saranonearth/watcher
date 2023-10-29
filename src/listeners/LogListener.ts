@@ -56,7 +56,7 @@ export class LogListener extends AbstractLogListener {
 
     private onSealed(data: ISealedLog) {
         const { packetId, transmitter, batchSize, root, signature } = data;
-        this.logService.processSealedEvent(this.network as NETWORK, {
+        this.logService.processSealedLog(this.network as NETWORK, {
             packetId,
             transmitter,
             batchSize,
@@ -67,7 +67,7 @@ export class LogListener extends AbstractLogListener {
 
     private onPacketProposed(data: IPacketProposedLog) {
         const { packetId, transmitter, proposalCount, root, switchboard } = data;
-        this.logService.processPacketProposedEvent(this.network as NETWORK, {
+        this.logService.processPacketProposedLog(this.network as NETWORK, {
             packetId,
             transmitter,
             proposalCount,

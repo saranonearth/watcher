@@ -4,7 +4,7 @@ import { NETWORK } from "../constants/network.js";
 import { CONFIG } from "../config/config.js";
 import { LogListener } from "./LogListener.js";
 
-// loads websocket connections to Socket contracts on repective chains
+// Loads websocket connections to Socket contracts on repective chains
 // to listen for Sealed and PacketProposed logs
 @Service()
 export class LogListenerLoader {

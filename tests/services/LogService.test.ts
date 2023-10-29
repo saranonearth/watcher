@@ -1,12 +1,14 @@
+import "reflect-metadata";
 import { SealedEventTopic } from "../../src/constants/events";
 import { CONFIG } from "../../src/config/config";
 import { NETWORK } from "../../src/constants/network";
 import { LogService } from "../../src/services/LogService";
 import mongoose from "mongoose";
+import { Container } from "typedi";
 
 describe("LogService Integration Tests", () => {
-    const logService = new LogService();
-
+    let logService: LogService;
+    logService = Container.get(LogService);
     beforeAll(async () => {
         // Connect to the MongoDB testing database
         mongoose.connect("mongodb://localhost:27017");
@@ -36,7 +38,7 @@ describe("LogService Integration Tests", () => {
     });
 
     it("should get sealed log", async () => {
-        const packetId = "00000bb7a9d32248962b8675438d488bbb28974081fd477900000000000005dc";
+        const packetId = "0x0000a4b158f06b216b41aa562dc6e93a5551ed4303441abe0000000000000d81";
 
         const srcChainId = logService.getChainSlugFromPacketId(packetId);
         const sealedLog = await logService.getSealedLog(srcChainId as number, packetId);

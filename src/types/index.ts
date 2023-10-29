@@ -27,9 +27,10 @@ export interface IPacketProposedLog {
 }
 
 export interface TripPorposalJob {
-    sealedTransmitter: string;
+    eventId: string;
+    sealedTransmitter?: string;
     proposedTransmitter: string;
-    srcChain: NETWORK;
+    srcChain?: NETWORK;
     localChain: NETWORK;
     packetId: string;
     switchboard: string;

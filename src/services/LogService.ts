@@ -1,21 +1,25 @@
-import { Service } from "typedi";
+import { EVENTS } from "../types/event.js";
 import { v4 as uuidv4 } from "uuid";
+import { Inject, Service } from "typedi";
+import { Interface } from "@ethersproject/abi";
 import { JsonRpcProvider } from "@ethersproject/providers";
 
 import logger from "../utils/logger.js";
 import LogModel from "../db/models/Log.js";
 import { CONFIG } from "../config/config.js";
-import { Interface } from "@ethersproject/abi";
-import { NETWORK_CONFIG, SOCKET_SUPPORTED_NETWORKS, WATCHER_APPLICATION_SUPPORTED_NETWORKS } from "../constants/network.js";
+import EventStore from "../db/models/EventStore.js";
+import { JobKey } from "../job/JobWorkerService.js";
+import { JobQueueService } from "../job/JobQueueService.js";
 import { CHAINID_DATA, NETWORK } from "../constants/network.js";
-import { IPacketProposedLog, ISealedLog } from "../types/index.js";
 import { SealedEventABI, SealedEventTopic } from "../constants/events.js";
-
+import { IPacketProposedLog, ISealedLog, TripPorposalJob } from "../types/index.js";
+import { SOCKET_SUPPORTED_NETWORKS, WATCHER_APPLICATION_SUPPORTED_NETWORKS, NETWORK_CONFIG } from "../constants/network.js";
 @Service()
 export class LogService {
-    public async processSealedEvent(network: NETWORK, data: ISealedLog) {
+    constructor(@Inject() private jobQueue: JobQueueService) {}
+    public async processSealedLog(network: NETWORK, data: ISealedLog) {
         try {
-            logger.info("In processSealedEvent", { network, data });
+            logger.info("In processSealedLog", { network, data });
             const log = {
                 log: "log.sealed",
                 logId: uuidv4(),
@@ -24,14 +28,14 @@ export class LogService {
                 data,
             };
             await LogModel.addLog(log);
-            logger.info("Sealed Event Added", { data });
+            logger.info("In processSealedLog - Sealed log Added", { data });
         } catch (error) {
-            logger.error("Error in processSealedEvent", { data }, error);
+            logger.error("Error in processSealedLog", { data }, error);
         }
     }
 
-    public async processPacketProposedEvent(network: NETWORK, data: IPacketProposedLog): Promise<void> {
-        logger.info("In processPacketProposedEvent", { network, data });
+    public async processPacketProposedLog(network: NETWORK, data: IPacketProposedLog): Promise<void> {
+        logger.info("In processPacketProposedLog", { network, data });
         try {
             // store proposed log
             const log = {
@@ -42,7 +46,8 @@ export class LogService {
                 data,
             };
             await LogModel.addLog(log);
-
+            logger.info("In processPacketProposedLog - PacketProposed log Added", { data });
+            const eventId = uuidv4();
             // get srcChainId from packetID
             const srcChainId = this.getChainSlugFromPacketId(data.packetId);
             const isSocketSupportedChain = SOCKET_SUPPORTED_NETWORKS.includes(srcChainId as number);
@@ -50,7 +55,28 @@ export class LogService {
             // if the packetId is not decodable to a suitable chainSlug that is Socket supported, transmitter might
             // be throwing random data with packetId. TRIP!
             if (!srcChainId || !isSocketSupportedChain) {
-                logger.info("TripProposal Job!");
+                logger.info("In processPacketProposedLog - Unsuppoered source chain found", { data });
+                // push the trip proposal job for the worker to process
+                await this.jobQueue.push(
+                    JobKey.TRIP_PROPOSAL,
+                    {
+                        eventId,
+                        localChain: network,
+                        packetId: data.packetId,
+                        switchboard: data.switchboard,
+                        proposalCount: data.proposalCount,
+                        proposedTransmitter: data.transmitter,
+                        root: data.root,
+                    } as TripPorposalJob,
+                    500000
+                );
+                await EventStore.addEvent({
+                    event: EVENTS.PROPOSAL_TRIP_INITIATED,
+                    eventId,
+                    refId: data.packetId,
+                    network,
+                    data,
+                });
                 return;
             }
 
@@ -64,16 +90,41 @@ export class LogService {
             // relavent sealed log from the sibling chain(scan db + use getLogs as fallback)
             const sealedLog = await this.getSealedLog(srcChainId, data.packetId);
             if (!sealedLog) {
-                logger.error("In processPacketProposedEvent - unable to find Sealed log", { data });
+                logger.error("In processPacketProposedLog - unable to find Sealed log", { data });
                 throw new Error("Unable to find Sealed log");
             }
 
             // if inconsistent then add trip proposal job to job queue
             if (sealedLog.root !== data.root) {
-                // add to queue
+                logger.info("In processPacketProposedLog - Root mismatch found", { data });
+                await this.jobQueue.push(
+                    JobKey.TRIP_PROPOSAL,
+                    {
+                        eventId,
+                        sealedTransmitter: sealedLog.transmitter,
+                        srcChain: CHAINID_DATA[srcChainId].network,
+                        localChain: network,
+                        packetId: data.packetId,
+                        switchboard: data.switchboard,
+                        proposalCount: data.proposalCount,
+                        proposedTransmitter: data.transmitter,
+                        root: data.root,
+                    } as TripPorposalJob,
+                    500000
+                );
+                await EventStore.addEvent({
+                    event: EVENTS.PROPOSAL_TRIP_INITIATED,
+                    eventId,
+                    refId: data.packetId,
+                    network,
+                    data,
+                });
+                return;
             }
+            await EventStore.addEvent({ event: EVENTS.PROPOSAL_OK, eventId, refId: data.packetId, network, data });
+            logger.info("In processPacketProposedLog - no mismatch", { data });
         } catch (error) {
-            logger.error("Error in processPacketProposedEvent - " + network, error);
+            logger.error("Error in processPacketProposedLog - " + network, error);
         }
     }
 
@@ -83,13 +134,14 @@ export class LogService {
             return sealedLogFromDB.data;
         }
         // if the log is not present in the DB, fallback to check in srcChain
-        // the log
+        // the log via getLogs()
         const srcChain = CHAINID_DATA[srcChainId].network;
         const socketAddress = (CONFIG.socket as { [key: number]: string })[`${srcChainId}`]; // little ts hack
 
         const sealedLogFromSrcChain = await this.getLogs(srcChain, socketAddress, [SealedEventTopic, null, packetId]);
         const parser = new Interface(SealedEventABI);
         if (!sealedLogFromSrcChain || !sealedLogFromSrcChain.length) {
+            logger.info("In getSealedLog - unable to resolve", { packetId });
             return null;
         }
         // parse the topics data of the log to readable format
