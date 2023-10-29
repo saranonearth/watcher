@@ -1,19 +1,32 @@
 import "reflect-metadata";
 import { Container } from "typedi";
+
 import { SwitchBoardService } from "../../src/services/SwitchboardService";
+import { NETWORK, NETWORK_CONFIG } from "../../src/constants/network";
 
 describe("SwitchboardService Integration Tests", () => {
     let switchboardService: SwitchBoardService;
-    switchboardService = Container.get(SwitchBoardService);
 
-    it("should return nonce", async () => {
-        const switchboardAddress = "0x09A6e77912a6bcFc3abfDfb841A85380Bb2A8B97";
-        const packetId = "0x0000000a1e8253de92f5ad79bd05feea72500d115955431e0000000000000651";
-
-        const nonce = await switchboardService.tripProposal(switchboardAddress, 42161, 10, packetId, 0);
-        expect(nonce).not.toEqual(100);
+    beforeAll(() => {
+        switchboardService = Container.get(SwitchBoardService);
     });
+
+    it("should make tripProposal in arbitrum", async () => {
+        const switchboardAddress = "0xd5e829827F665c42326EAF68Da3360bd59b42f2f";
+        const packetId = "0x0000000a1e8253de92f5ad79bd05feea72500d115955431e0000000000000651";
+        const proposalCount = 3;
+        const srcChain = NETWORK_CONFIG[NETWORK.OPTIMISM].chainId;
+        const localChain = NETWORK_CONFIG[NETWORK.ARBITRUM].chainId;
+
+        const txReceipt = await switchboardService.tripProposal(
+            switchboardAddress,
+            srcChain,
+            localChain,
+            packetId,
+            proposalCount
+        );
+        expect(txReceipt).not.toEqual(null);
+        expect(txReceipt?.blockHash).not.toEqual(null);
+        expect(txReceipt?.blockHash).not.toEqual(null);
+    }, 30000);
 });
-function keccak256(arg0: any) {
-    throw new Error("Function not implemented.");
-}

@@ -7,9 +7,11 @@ export type NetworkConfig = {
     httpRpc: string;
     wssRpc: string;
 };
-
-export interface ISealedLog {
+export interface LogFields {
     type?: string;
+    removed?: boolean;
+}
+export interface ISealedLog extends LogFields {
     transmitter: string;
     packetId: string;
     batchSize: BigNumberish;
@@ -17,8 +19,7 @@ export interface ISealedLog {
     signature: string;
 }
 
-export interface IPacketProposedLog {
-    type?: string;
+export interface IPacketProposedLog extends LogFields {
     transmitter: string;
     packetId: string;
     proposalCount: BigNumberish;

@@ -55,7 +55,7 @@ export class LogService {
             // if the packetId is not decodable to a suitable chainSlug that is Socket supported, transmitter might
             // be throwing random data with packetId. TRIP!
             if (!srcChainId || !isSocketSupportedChain) {
-                logger.info("In processPacketProposedLog - Unsuppoered source chain found", { data });
+                logger.info("In processPacketProposedLog - Unsupported source chain found", { data });
                 // push the trip proposal job for the worker to process
                 await this.jobQueue.push(
                     JobKey.TRIP_PROPOSAL,

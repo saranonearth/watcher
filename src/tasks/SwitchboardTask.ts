@@ -14,40 +14,44 @@ export class SwitchboardTask {
     public async tripProposal(payload: TripPorposalJob) {
         logger.info("Process Trip Proposal", { payload });
 
-        const events = await EventStore.getEventByEventIdRefId(payload.eventId, payload.packetId);
-        const isCompleted = events.find((e) => e.event === EVENTS.PROPOSAL_TRIP_COMPLETED);
-        if (isCompleted) {
-            logger.info("In SwitchboardTask - Job already processed", { payload });
-            return;
-        }
+        try {
+            const events = await EventStore.getEventByEventIdRefId(payload.eventId, payload.packetId);
+            const isCompleted = events.find((e) => e.event === EVENTS.PROPOSAL_TRIP_COMPLETED);
+            if (isCompleted) {
+                logger.info("In SwitchboardTask - Job already processed", { payload });
+                return;
+            }
 
-        const isProcessing = events.find((e) => e.event === EVENTS.PROPOSAL_TRIP_PROCESSING);
-        if (!isProcessing) {
+            const isProcessing = events.find((e) => e.event === EVENTS.PROPOSAL_TRIP_PROCESSING);
+            if (!isProcessing) {
+                await EventStore.addEvent({
+                    event: EVENTS.PROPOSAL_TRIP_PROCESSING,
+                    eventId: payload.eventId,
+                    refId: payload.packetId,
+                    network: payload.localChain,
+                    data: payload,
+                });
+            }
+
+            // do the transaction
+            const tx = await this.switchBoardService.tripProposal(
+                payload.switchboard,
+                NETWORK_CONFIG[payload.srcChain as NETWORK].chainId,
+                NETWORK_CONFIG[payload.localChain as NETWORK].chainId,
+                payload.packetId,
+                Number(payload.proposalCount.toString())
+            );
+
             await EventStore.addEvent({
-                event: EVENTS.PROPOSAL_TRIP_PROCESSING,
+                event: EVENTS.PROPOSAL_TRIP_COMPLETED,
                 eventId: payload.eventId,
                 refId: payload.packetId,
                 network: payload.localChain,
-                data: payload,
+                data: { ...payload, tx },
             });
+        } catch (error) {
+            logger.error("Error in SwitchboardTask - tripProposal", { payload }, error);
+            throw error;
         }
-
-        // do the transaction
-        const tx = await this.switchBoardService.tripProposal(
-            payload.switchboard,
-            NETWORK_CONFIG[payload.srcChain as NETWORK].chainId,
-            NETWORK_CONFIG[payload.localChain as NETWORK].chainId,
-            payload.packetId,
-            Number(payload.proposalCount.toString())
-        );
-        // const txReceipt = await tx.wait();
-
-        await EventStore.addEvent({
-            event: EVENTS.PROPOSAL_TRIP_COMPLETED,
-            eventId: payload.eventId,
-            refId: payload.packetId,
-            network: payload.localChain,
-            data: { ...payload },
-        });
     }
 }
