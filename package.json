@@ -7,14 +7,9 @@
     "type": "module",
     "scripts": {
         "dev": "ts-node --esm src/start.ts",
-        "tests": "jest --detectOpenHandles --coverage",
-        "tests:integration": "echo 'Hello integration tests'",
-        "lint": "eslint src/**/*.ts",
-        "lint:fix": "eslint --fix ./src/**/*.ts",
-        "build": "tsc && npm run copy-proto",
-        "copy-proto": "cp -R ./src/schemas/ ./dist/schemas",
-        "start": "node --experimental-import-meta-resolve --trace-warnings dist/index.js",
-        "link:lib:build": "npm run link:lib && npm run build"
+        "tests": "jest --coverage",
+        "build": "tsc",
+        "start": "node --experimental-import-meta-resolve --trace-warnings dist/start.js"
     },
     "dependencies": {
         "@ethersproject/abi": "^5.7.0",
@@ -50,6 +45,6 @@
         "ts-jest": "^29.1.1",
         "ts-node": "^10.9.1",
         "tsup": "^6.2.3",
-        "typescript": "^4.8.2"
+        "typescript": "^5.2.2"
     }
 }

@@ -10,6 +10,7 @@
         "outDir": "dist",
         "declaration": true,
         "alwaysStrict": true,
+        "skipLibCheck": true,
         "strict": true,
         "experimentalDecorators": true,
         "strictPropertyInitialization": false,
@@ -17,7 +18,6 @@
         "types": ["jest"],
         "baseUrl": "./"
     },
-    "files": ["src/index.ts", "src/start.ts"],
-    "include": ["./src/**/*"],
-    "exclude": ["node_modules", "./*.ts", "tests"]
+    "include": ["./src/**/*.*"],
+    "exclude": ["node_modules/*", "dist/*", "scripts/*", "tests"]
 }

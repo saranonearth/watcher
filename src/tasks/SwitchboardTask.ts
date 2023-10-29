@@ -6,7 +6,6 @@ import EventStore from "../db/models/EventStore.js";
 import { TripPorposalJob } from "../types/index.js";
 import { SwitchBoardService } from "../services/SwitchboardService.js";
 import { NETWORK, NETWORK_CONFIG } from "../constants/network.js";
-import { BigNumber, BigNumberish } from "@ethersproject/bignumber";
 
 @Service()
 export class SwitchboardTask {
