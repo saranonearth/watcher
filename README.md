@@ -1,10 +1,6 @@
 # socket-watcher
 Monitors Sealed and Proposed events of SocketDL and triggers a trip if inconsistency is identified⚡
-
-## Getting Started
-
-This is an example of how you may give instructions on setting up your project locally.
-To get a local copy up and running follow these simple example steps.
+<img width="963" alt="Screenshot 2023-10-30 at 1 15 43 AM" src="https://github.com/saranonearth/watcher/assets/44068102/db9db4ad-d67b-41d4-bdfb-92a2c57f01d7">
 
 ### Prerequisites
 * Docker (https://www.docker.com/get-started/)
