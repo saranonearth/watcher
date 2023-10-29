@@ -47,7 +47,7 @@ export class LogService {
             };
             await LogModel.addLog(log);
             logger.info("In processPacketProposedLog - PacketProposed log Added", { data });
-            const eventId = uuidv4();
+            const eventId = data.proposalCount + ":" + data.packetId;
             // get srcChainId from packetID
             const srcChainId = this.getChainSlugFromPacketId(data.packetId);
             const isSocketSupportedChain = SOCKET_SUPPORTED_NETWORKS.includes(srcChainId as number);
