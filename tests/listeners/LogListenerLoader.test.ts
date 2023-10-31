@@ -6,37 +6,59 @@ import { LogListener } from "../../src/listeners/LogListener";
 import { JobQueueService } from "../../src/job/JobQueueService";
 import { LogService } from "../../src/services/LogService";
 import logger from "../../src/utils/logger";
+import { Container } from "typedi";
 
-// Mocks
-jest.mock("../../src/listeners/LogListener");
-jest.mock("../../src/job/JobQueueService");
-jest.mock("../../src/services/LogService");
-jest.mock("../../src/utils/logger");
+// Mock the values of CHAINID_DATA and CONFIG.socket
+const mockChainData = {
+    42161: {
+        chainId: 42161,
+        network: "arbitrum",
+        httpRpc: "",
+        wssRpc: "",
+    },
+    10: {
+        chainId: 10,
+        network: "optimism",
+        httpRpc: "",
+        wssRpc: "",
+    },
+};
+
+const mockSocketConfig = {
+    socket: {
+        42161: "0x37cc674582049b579571e2ffd890a4d99355f6ba",
+        10: "0x301bD265F0b3C16A58CbDb886Ad87842E3A1c0a4",
+    },
+};
+
+jest.mock("../../src/constants/network", () => ({
+    CHAINID_DATA: mockChainData,
+}));
+jest.mock("../../src/config/config", () => ({
+    CONFIG: {
+        socket: mockSocketConfig,
+    },
+}));
 describe("LogListenerLoader", () => {
-    let logListenerLoader: LogListenerLoader;
-    let mockArbitrumListener: LogListener;
-    let mockOptimismListener: LogListener;
+    it("should call LogListener.start for each network", async () => {
+        const mockLogListener = {
+            start: jest.fn(),
+        };
 
-    beforeEach(() => {
-        let mockedLogService = new LogService(new JobQueueService());
-        mockArbitrumListener = new LogListener(mockedLogService);
-        mockOptimismListener = new LogListener(mockedLogService);
-        logListenerLoader = new LogListenerLoader(mockArbitrumListener, mockOptimismListener);
-    });
+        const mockContainerGet = jest.spyOn(Container, "get");
+        mockContainerGet.mockReturnValue(mockLogListener);
 
-    afterEach(() => {
-        jest.clearAllMocks();
-    });
-
-    it("should start listening for OPTIMISM and ARBITRUM logs", async () => {
-        // Mock the start method of LogListener instances
-        mockArbitrumListener.start = jest.fn();
-        mockOptimismListener.start = jest.fn();
-
+        const logListenerLoader = new LogListenerLoader();
         await logListenerLoader.load();
 
-        // Expect the start method to be called with the correct parameters
-        expect(mockArbitrumListener.start).toHaveBeenCalledWith(NETWORK.ARBITRUM, CONFIG.socket[42161]);
-        expect(mockOptimismListener.start).toHaveBeenCalledWith(NETWORK.OPTIMISM, CONFIG.socket[10]);
+        Object.values(mockChainData).forEach((network) => {
+            console.log(network);
+            expect(mockContainerGet).toHaveBeenCalledWith(LogListener);
+            expect(mockLogListener.start).toHaveBeenCalledWith(
+                network.network,
+                (mockSocketConfig.socket as { [key: number]: string })[network.chainId]
+            );
+        });
+        mockContainerGet.mockRestore();
     });
 });
